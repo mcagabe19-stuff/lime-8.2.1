@@ -2,18 +2,20 @@ name: Linux CI
 on: workflow_dispatch
 
 env:
-  HAXE_VERSION: 4.3.5
+  HAXE_VERSION: 4.3.6
 
 jobs:
   linux:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v3
       - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev g++-multilib gcc-multilib libpulse-dev libasound2-dev libx11-dev libxext-dev libxi-dev libxrandr-dev libxinerama-dev libmbedtls-dev libpng-dev libturbojpeg-dev libuv1-dev libvorbis-dev
-      - uses: krdlab/setup-haxe@master
+      - name: Setup Haxe
+        uses: krdlab/setup-haxe@master
         with:
           haxe-version: ${{ env.HAXE_VERSION }}
       - name: Set HAXEPATH
@@ -27,18 +29,20 @@ jobs:
         run: echo "HXCPP_COMPILE_CACHE=~/.hxcpp" >> $GITHUB_ENV
       - name: Configure Lime
         run: haxelib dev lime ${{ github.workspace }}
-      - name: Rebuild Lime (Linux)
+      - name: Rebuild Lime
         run: |
-          haxelib run lime rebuild linux -32 -release -nocolor -nocffi -eval
+          # haxelib run lime rebuild linux -32 -release -nocolor -nocffi -eval
           haxelib run lime rebuild linux -64 -release -nocolor -nocffi -eval
-      - uses: actions/upload-artifact@v3
-        with:
-          name: Linux-NDLL
-          path: |
-            ndll/Linux/
-            !**/.gitignore
-          if-no-files-found: error
-      - uses: actions/upload-artifact@v3
+      # - name: Upload Artifact (x86)
+        # uses: actions/upload-artifact@v3
+        # with:
+          # name: Linux-NDLL
+          # path: |
+            # ndll/Linux/
+            # !**/.gitignore
+          # if-no-files-found: error
+      - name: Upload Artifact (x86_64)
+        uses: actions/upload-artifact@v3
         with:
           name: Linux64-NDLL
           path: |

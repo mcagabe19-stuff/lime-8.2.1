@@ -2,18 +2,21 @@ name: Android CI
 on: workflow_dispatch
 
 env:
-  HAXE_VERSION: 4.3.5
+  HAXE_VERSION: 4.3.6
 
 jobs:
   android:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
-      - uses: nttld/setup-ndk@main
-        id: setup-ndk
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup Android NDK
+        uses: nttld/setup-ndk@main
+        id: ndk
         with:
           ndk-version: r25c
-      - uses: krdlab/setup-haxe@master
+      - name: Setup Haxe
+        uses: krdlab/setup-haxe@master
         with:
           haxe-version: ${{ env.HAXE_VERSION }}
       - name: Set HAXEPATH
@@ -28,16 +31,17 @@ jobs:
       - name: Configure Lime
         run: |
           haxelib dev lime ${{ github.workspace }}
-          haxelib run lime config ANDROID_NDK_ROOT ${{ steps.setup-ndk.outputs.ndk-path }}
+          haxelib run lime config ANDROID_NDK_ROOT ${{ steps.ndk.outputs.ndk-path }}
           haxelib run lime config ANDROID_SETUP true
-      - name: Rebuild Lime (Android)
+      - name: Rebuild Lime
         continue-on-error: true
         run: |
           haxelib run lime rebuild android -release -nocolor -nocffi -eval -ONLY_ARMV7
           haxelib run lime rebuild android -release -nocolor -nocffi -eval -ONLY_ARM64
           haxelib run lime rebuild android -release -nocolor -nocffi -eval -ONLY_X86
           haxelib run lime rebuild android -release -nocolor -nocffi -eval -ONLY_X86_64
-      - uses: actions/upload-artifact@v3
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
         with:
           name: Android-NDLL
           path: |

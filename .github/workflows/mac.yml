@@ -2,14 +2,16 @@ name: Mac CI
 on: workflow_dispatch
 
 env:
-  HAXE_VERSION: 4.3.5
+  HAXE_VERSION: 4.3.6
 
 jobs:
   mac:
     runs-on: macos-13
     steps:
-      - uses: actions/checkout@v3
-      - uses: krdlab/setup-haxe@master
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup Haxe
+        uses: krdlab/setup-haxe@master
         with:
           haxe-version: ${{ env.HAXE_VERSION }}
       - name: Set HAXEPATH
@@ -23,18 +25,20 @@ jobs:
         run: echo "HXCPP_COMPILE_CACHE=~/.hxcpp" >> $GITHUB_ENV
       - name: Configure Lime
         run: haxelib dev lime ${{ github.workspace }}
-      - name: Rebuild Lime (Mac)
+      - name: Rebuild Lime
         run: |
           # haxelib run lime rebuild mac -32 -release -nocolor -nocffi -eval
           haxelib run lime rebuild mac -64 -release -nocolor -nocffi -eval
-      # - uses: actions/upload-artifact@v3
+      # - name: Upload Artifact (x86)
+        # uses: actions/upload-artifact@v3
         # with:
           # name: Mac-NDLL
           # path: |
             # ndll/Mac/
             # !**/.gitignore
           # if-no-files-found: error
-      - uses: actions/upload-artifact@v3
+      - name: Upload Artifact (x86_64)
+        uses: actions/upload-artifact@v3
         with:
           name: Mac64-NDLL
           path: |
@@ -44,8 +48,10 @@ jobs:
   macarm64:
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v3
-      - uses: krdlab/setup-haxe@master
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup Haxe
+        uses: krdlab/setup-haxe@master
         with:
           haxe-version: ${{ env.HAXE_VERSION }}
       - name: Set HAXEPATH
@@ -59,9 +65,10 @@ jobs:
         run: echo "HXCPP_COMPILE_CACHE=~/.hxcpp" >> $GITHUB_ENV
       - name: Configure Lime
         run: haxelib dev lime ${{ github.workspace }}
-      - name: Rebuild Lime (Mac)
+      - name: Rebuild Lime
         run: haxelib run lime rebuild mac -arm64 -release -nocolor -nocffi -eval -D HXCPP_ARM64
-      - uses: actions/upload-artifact@v3
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
         with:
           name: MacArm64-NDLL
           path: |
