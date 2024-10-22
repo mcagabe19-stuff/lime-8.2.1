@@ -150,6 +150,15 @@ class AndroidPlatform extends PlatformTarget
 		if (hasX86) architectures.push(Architecture.X86);
 		if (hasX64) architectures.push(Architecture.X64);
 
+		if (project.targetFlags.exists("ONLY_ARMV7"))
+			architectures = [Architecture.ARMV7];
+		else if (project.targetFlags.exists("ONLY_ARM64"))
+			architectures = [Architecture.ARM64];
+		else if (project.targetFlags.exists("ONLY_X86"))
+			architectures = [Architecture.X86];
+		else if (project.targetFlags.exists("ONLY_X86_64"))
+			architectures = [Architecture.X64];
+
 		if (architectures.length == 0)
 		{
 			Log.warn("No architecture selected, defaulting to ARM64.");
@@ -373,6 +382,27 @@ class AndroidPlatform extends PlatformTarget
 
 		var commands = [];
 
+		if (project.targetFlags.exists("ONLY_ARMV7"))
+		{
+			armv7 = true;
+			armv5 = arm64 = x86 = x64 = false;
+		}
+		else if (project.targetFlags.exists("ONLY_ARM64"))
+		{
+			arm64 = true;
+			armv5 = armv7 = x86 = x64 = false;
+		}
+		else if (project.targetFlags.exists("ONLY_X86"))
+		{
+			x86 = true;
+			armv5 = arm64 = armv7 = x64 = false;
+		}
+		else if (project.targetFlags.exists("ONLY_X86_64"))
+		{
+			x64 = true;
+			armv5 = arm64 = armv7 = x86 = false;
+		}
+
 		if (armv5) commands.push(["-Dandroid", "-DPLATFORM=android-21"]);
 		if (armv7) commands.push(["-Dandroid", "-DHXCPP_ARMV7", "-DPLATFORM=android-21"]);
 		if (arm64) commands.push(["-Dandroid", "-DHXCPP_ARM64", "-DPLATFORM=android-21"]);
@@ -465,16 +495,27 @@ class AndroidPlatform extends PlatformTarget
 		context.OUTPUT_DIR = targetDirectory;
 		context.ANDROID_INSTALL_LOCATION = project.config.getString("android.install-location", "auto");
 		context.ANDROID_MINIMUM_SDK_VERSION = project.config.getInt("android.minimum-sdk-version", 21);
-		context.ANDROID_TARGET_SDK_VERSION = project.config.getInt("android.target-sdk-version", 30);
+		context.ANDROID_TARGET_SDK_VERSION = project.config.getInt("android.target-sdk-version", 34);
 		context.ANDROID_EXTENSIONS = project.config.getArrayString("android.extension");
 		context.ANDROID_PERMISSIONS = project.config.getArrayString("android.permission", [
 			"android.permission.WAKE_LOCK",
 			"android.permission.INTERNET",
 			"android.permission.VIBRATE",
-			"android.permission.ACCESS_NETWORK_STATE"
+			"android.permission.ACCESS_NETWORK_STATE",
+			"android.permission.ACCESS_MEDIA_LOCATION",
+			"android.permission.MANAGE_EXTERNAL_STORAGE",
+			"android.permission.MANAGE_MEDIA",
+			"android.permission.MANAGE_DOCUMENTS",
+			"android.permission.WRITE_MEDIA_STORAGE",
+			"android.permission.READ_MEDIA_IMAGES",
+			"android.permission.READ_MEDIA_VIDEO",
+			"android.permission.READ_MEDIA_AUDIO",
+			"android.permission.READ_EXTERNAL_STORAGE",
+			"android.permission.WRITE_EXTERNAL_STORAGE",
+			"android.permission.REQUEST_INSTALL_PACKAGES"
 		]);
-		context.ANDROID_GRADLE_VERSION = project.config.getString("android.gradle-version", "7.4.2");
-		context.ANDROID_GRADLE_PLUGIN = project.config.getString("android.gradle-plugin", "7.3.1");
+		context.ANDROID_GRADLE_VERSION = project.config.getString("android.gradle-version", "8.0");
+		context.ANDROID_GRADLE_PLUGIN = project.config.getString("android.gradle-plugin", "8.1.1");
 		context.ANDROID_USE_ANDROIDX = project.config.getString("android.useAndroidX", "true");
 		context.ANDROID_ENABLE_JETIFIER = project.config.getString("android.enableJetifier", "false");
 
