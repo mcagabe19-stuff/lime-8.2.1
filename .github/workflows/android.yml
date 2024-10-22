@@ -6,7 +6,7 @@ env:
 
 jobs:
   android:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -14,7 +14,7 @@ jobs:
         uses: nttld/setup-ndk@main
         id: ndk
         with:
-          ndk-version: r25c
+          ndk-version: r28
       - name: Setup Haxe
         uses: krdlab/setup-haxe@master
         with:
@@ -31,7 +31,7 @@ jobs:
       - name: Configure Lime
         run: |
           haxelib dev lime ${{ github.workspace }}
-          haxelib run lime config ANDROID_NDK_ROOT $ANDROID_NDK_LATEST_HOME
+          haxelib run lime config ANDROID_NDK_ROOT ${{ steps.ndk.outputs.ndk-path }}
           haxelib run lime config ANDROID_SETUP true
       - name: Rebuild Lime
         continue-on-error: true
