@@ -37,7 +37,7 @@ jobs:
       - name: Install system dependencies for x86
         run: sudo apt-get autoremove -y --purge gcc-aarch64-linux-gnu g++-aarch64-linux-gnu && sudo apt-get install -y g++-multilib gcc-multilib
       - name: Rebuild Lime for x86
-        run: haxelib run lime rebuild linux -32 -release -nocolor -nocffi -eval
+        run: haxelib run lime rebuild linux -32 -release -nocolor -nocffi -eval -D HXCPP_M32
       - name: Upload Artifact (x86)
         uses: actions/upload-artifact@v3
         with:
