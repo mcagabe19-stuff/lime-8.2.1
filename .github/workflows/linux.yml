@@ -31,7 +31,6 @@ jobs:
         run: haxelib dev lime ${{ github.workspace }}
       - name: Rebuild Lime
         run: |
-          haxelib run lime rebuild linux -32 -release -nocolor -nocffi -eval
           haxelib run lime rebuild linux -64 -release -nocolor -nocffi -eval
           HXCPP_STRIP=/usr/aarch64-linux-gnu/bin/strip CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ haxelib run lime rebuild linux -arm64 -release -nocolor -nocffi -eval -D HXCPP_ARM64
       - name: Install system dependencies for x86
