@@ -13,7 +13,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgl1-mesa-dev libglu1-mesa-dev g++-multilib gcc-multilib libpulse-dev libasound2-dev libx11-dev libxext-dev libxi-dev libxrandr-dev libxinerama-dev libmbedtls-dev libpng-dev libturbojpeg-dev libuv1-dev libvorbis-dev
+          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libgl1-mesa-dev libglu1-mesa-dev g++-multilib gcc-multilib libpulse-dev libasound2-dev libx11-dev libxext-dev libxi-dev libxrandr-dev libxinerama-dev libmbedtls-dev libpng-dev libturbojpeg-dev libuv1-dev libvorbis-dev
       - name: Setup Haxe
         uses: krdlab/setup-haxe@master
         with:
@@ -33,6 +33,7 @@ jobs:
         run: |
           haxelib run lime rebuild linux -32 -release -nocolor -nocffi -eval
           haxelib run lime rebuild linux -64 -release -nocolor -nocffi -eval
+          CC=gcc-aarch64-linux-gnu CXX=g++-aarch64-linux-gnu haxelib run lime rebuild linux -arm64 -release -nocolor -nocffi -eval -D HXCPP_ARM64
       - name: Upload Artifact (x86)
         uses: actions/upload-artifact@v3
         with:
@@ -47,5 +48,13 @@ jobs:
           name: Linux64-NDLL
           path: |
             ndll/Linux64/
+            !**/.gitignore
+          if-no-files-found: error
+      - name: Upload Artifact (arm64)
+        uses: actions/upload-artifact@v3
+        with:
+          name: LinuxArm64-NDLL
+          path: |
+            ndll/LinuxArm64/
             !**/.gitignore
           if-no-files-found: error
