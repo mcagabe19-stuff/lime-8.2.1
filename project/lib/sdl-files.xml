@@ -101,7 +101,7 @@
         <compilerflag value="-I${NATIVE_TOOLKIT_PATH}/sdl/src/hidapi/hidapi/" />
         <compilerflag value="-I${SDL_CONFIG_PATH}" if="SDL_CONFIG_PATH" />
 
-        <compilerflag value="-DGL_GLEXT_PROTOTYPES" if="android || HXCPP_ARM64 || rpi" />
+        <compilerflag value="-DGL_GLEXT_PROTOTYPES" if="android || linux HXCPP_ARM64 || rpi" />
         <compilerflag value="-DHAVE_LIBC" />
 
         <compilerflag value="-D__IPHONEOS__" if="ios || tvos" />
@@ -126,7 +126,7 @@
         </section>
 
         <section if="linux">
-        	
+
              <compilerflag value="-mfpu=neon" if="HXCPP_ARMV7" />
              <compilerflag value="-mfloat-abi=hard" if="HXCPP_ARMV7" />
              <compilerflag value="-I-abi=hard" if="HXCPP_ARMV7 || HXCPP_ARM64" />
@@ -298,7 +298,7 @@
 
         </section>
 
-        <section if="android || ios || windows || rpi || HXCPP_ARM64 || tvos">
+        <section if="android || ios || rpi || tvos || HXCPP_ARM64">
 
             <file name="${NATIVE_TOOLKIT_PATH}/sdl/src/render/opengles/SDL_render_gles.c" />
             <file name="${NATIVE_TOOLKIT_PATH}/sdl/src/render/opengles2/SDL_render_gles2.c" />
@@ -307,7 +307,7 @@
 
         </section>
 
-        <section if="windows || mac || android || rpi || HXCPP_ARM64">
+        <section if="windows || mac || android || rpi">
 
             <file name="${NATIVE_TOOLKIT_PATH}/sdl/src/joystick/hidapi/SDL_hidapi_gamecube.c" />
             <file name="${NATIVE_TOOLKIT_PATH}/sdl/src/joystick/hidapi/SDL_hidapi_luna.c" />
