@@ -34,6 +34,10 @@ jobs:
           haxelib run lime rebuild linux -32 -release -nocolor -nocffi -eval
           haxelib run lime rebuild linux -64 -release -nocolor -nocffi -eval
           HXCPP_STRIP=/usr/aarch64-linux-gnu/bin/strip CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ haxelib run lime rebuild linux -arm64 -release -nocolor -nocffi -eval -D HXCPP_ARM64
+      - name: Install system dependencies for x86
+        run: sudo apt-get autoremove -y --purge gcc-aarch64-linux-gnu g++-aarch64-linux-gnu && sudo apt-get install -y g++-multilib gcc-multilib
+      - name: Rebuild Lime for x86
+        run: haxelib run lime rebuild linux -32 -release -nocolor -nocffi -eval
       - name: Upload Artifact (x86)
         uses: actions/upload-artifact@v3
         with:
