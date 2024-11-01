@@ -491,12 +491,18 @@ class LinuxPlatform extends PlatformTarget
 		{
 			if (!targetFlags.exists("32") && !targetFlags.exists("x86_32") && System.hostArchitecture == X64)
 			{
-				commands.push(["-Dlinux", "-DHXCPP_M64"]);
+				if (targetFlags.exists("HXCPP_ARM64"))
+					commands.push(["-Dlinux"]);
+				else
+					commands.push(["-Dlinux", "-DHXCPP_M64"]);
 			}
 
 			if (!targetFlags.exists("64") && !targetFlags.exists("x86_64") && (command == "rebuild" && (System.hostArchitecture == X86 || System.hostArchitecture == X64)))
 			{
-				commands.push(["-Dlinux", "-DHXCPP_M32"]);
+				if (targetFlags.exists("HXCPP_ARMV7"))
+					commands.push(["-Dlinux"]);
+				else
+					commands.push(["-Dlinux", "-DHXCPP_M32"]);
 			}
 			
 			if (!targetFlags.exists("armv7") && System.hostArchitecture == ARM64)
