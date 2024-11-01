@@ -425,7 +425,7 @@ class LinuxPlatform extends PlatformTarget
 	{
 		// var project = project.clone ();
 
-		if (isRaspberryPi)
+		if(targetFlags.exists('rpi'))
 		{
 			project.haxedefs.set("rpi", 1);
 		}
