@@ -65,7 +65,7 @@ jobs:
           wget http://mirrors.ocf.berkeley.edu/ubuntu-ports/pool/main/libg/libglvnd/libegl1_1.4.0-1_arm64.deb
           sudo dpkg-deb -x libegl1_1.4.0-1_arm64.deb /
           wget http://mirrors.ocf.berkeley.edu/ubuntu-ports/pool/main/libg/libglvnd/libegl-dev_1.4.0-1_arm64.deb
-          sudo dpkg-deb -x libegl-de_1.4.0-1_arm64.deb /
+          sudo dpkg-deb -x libegl-dev_1.4.0-1_arm64.deb /
           wget http://mirrors.ocf.berkeley.edu/ubuntu-ports/pool/main/libg/libglvnd/libgles2_1.6.0-1_arm64.deb
           sudo dpkg-deb -x libgles2_1.6.0-1_arm64.deb /
           wget http://mirrors.ocf.berkeley.edu/ubuntu-ports/pool/main/libg/libglvnd/libgles-dev_1.6.0-1_arm64.deb
