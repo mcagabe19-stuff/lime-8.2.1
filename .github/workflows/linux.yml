@@ -99,7 +99,7 @@ jobs:
         run: haxelib dev lime ${{ github.workspace }}
       - name: Rebuild Lime
         run: |
-          CC=arm-linux-gnueabihf-gcc CXX=arm-linux-gnueabihf-g++ HXCPP_STRIP=arm-linux-gnueabihf-strip haxelib run lime rebuild linux -armv7 -release -nocolor -nocffi -eval -D HXCPP_ARMV7
+          CC=arm-linux-gnueabihf-gcc CXX=arm-linux-gnueabihf-g++ HXCPP_STRIP=arm-linux-gnueabihf-strip setarch linux32 haxelib run lime rebuild linux -armv7 -release -nocolor -nocffi -eval -D HXCPP_ARMV7
           CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ HXCPP_STRIP=aarch64-linux-gnu-strip haxelib run lime rebuild linux -arm64 -release -nocolor -nocffi -eval -D HXCPP_ARM64
       - name: Upload Artifact (armhf)
         uses: actions/upload-artifact@v3
