@@ -489,7 +489,6 @@ class LinuxPlatform extends PlatformTarget
 		}
 		else
 		{
-			trace(project.haxeflags);
 			if (!targetFlags.exists("32") && !targetFlags.exists("x86_32") && System.hostArchitecture == X64)
 			{
 				if (targetFlags.exists("arm64"))
