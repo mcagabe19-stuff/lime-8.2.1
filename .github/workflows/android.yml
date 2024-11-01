@@ -34,7 +34,6 @@ jobs:
           haxelib run lime config ANDROID_NDK_ROOT ${{ steps.ndk.outputs.ndk-path }}
           haxelib run lime config ANDROID_SETUP true
       - name: Rebuild Lime
-        continue-on-error: true
         run: |
           haxelib run lime rebuild android -release -nocolor -nocffi -eval -ONLY_ARMV7
           haxelib run lime rebuild android -release -nocolor -nocffi -eval -ONLY_ARM64
