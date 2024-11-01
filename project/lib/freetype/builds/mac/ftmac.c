@@ -5,7 +5,7 @@
 /*    Mac FOND support.  Written by just@letterror.com.                    */
 /*  Heavily Fixed by mpsuzuki, George Williams and Sean McBride            */
 /*                                                                         */
-/*  Copyright (C) 1996-2022 by                                             */
+/*  Copyright 1996-2018 by                                                 */
 /*  Just van Rossum, David Turner, Robert Wilhelm, and Werner Lemberg.     */
 /*                                                                         */
 /*  This file is part of the FreeType project, and may only be used,       */
@@ -62,9 +62,10 @@
   */
 
 
-#include <freetype/freetype.h>
-#include <freetype/tttags.h>
-#include <freetype/internal/ftstream.h>
+#include <ft2build.h>
+#include FT_FREETYPE_H
+#include FT_TRUETYPE_TAGS_H
+#include FT_INTERNAL_STREAM_H
 #include "ftbase.h"
 
 #if defined( __GNUC__ ) || defined( __IBMC__ )
@@ -97,7 +98,7 @@
 
 #define FT_DEPRECATED_ATTRIBUTE
 
-#include <freetype/ftmac.h>
+#include FT_MAC_H
 
   /* undefine blocking-macros in ftmac.h */
 #undef FT_GetFile_From_Mac_Name
@@ -447,7 +448,7 @@ typedef short ResourceIndex;
 
     stream->descriptor.pointer = NULL;
     stream->size               = 0;
-    stream->base               = NULL;
+    stream->base               = 0;
   }
 
 
@@ -779,10 +780,9 @@ typedef short ResourceIndex;
       style = (StyleTable*)p;
       p += sizeof ( StyleTable );
       string_count = EndianS16_BtoN( *(short*)(p) );
-      string_count = FT_MIN( 64, string_count );
       p += sizeof ( short );
 
-      for ( i = 0; i < string_count; i++ )
+      for ( i = 0; i < string_count && i < 64; i++ )
       {
         names[i] = p;
         p       += names[i][0];
@@ -799,7 +799,7 @@ typedef short ResourceIndex;
           ps_name[ps_name_len] = 0;
         }
         if ( style->indexes[face_index] > 1 &&
-             style->indexes[face_index] <= string_count )
+             style->indexes[face_index] <= FT_MIN( string_count, 64 ) )
         {
           unsigned char*  suffixes = names[style->indexes[face_index] - 1];
 
@@ -939,7 +939,7 @@ typedef short ResourceIndex;
     if ( lwfn_file_name[0] )
     {
       err = lookup_lwfn_by_fond( pathname, lwfn_file_name,
-                                 buff, sizeof ( buff ) );
+                                 buff, sizeof ( buff )  );
       if ( !err )
         have_lwfn = 1;
     }
@@ -1011,7 +1011,7 @@ typedef short ResourceIndex;
       old_total_size = total_size;
     }
 
-    if ( FT_QALLOC( buffer, (FT_Long)total_size ) )
+    if ( FT_ALLOC( buffer, (FT_Long)total_size ) )
       goto Error;
 
     /* Second pass: append all POST data to the buffer, add PFB fields. */
@@ -1127,7 +1127,7 @@ typedef short ResourceIndex;
       return FT_THROW( Invalid_Handle );
 
     sfnt_size = (FT_ULong)GetHandleSize( sfnt );
-    if ( FT_QALLOC( sfnt_data, (FT_Long)sfnt_size ) )
+    if ( FT_ALLOC( sfnt_data, (FT_Long)sfnt_size ) )
     {
       ReleaseResource( sfnt );
       return error;

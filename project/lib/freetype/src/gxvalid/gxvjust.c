@@ -1,44 +1,44 @@
-/****************************************************************************
- *
- * gxvjust.c
- *
- *   TrueTypeGX/AAT just table validation (body).
- *
- * Copyright (C) 2005-2022 by
- * suzuki toshiya, Masatake YAMATO, Red Hat K.K.,
- * David Turner, Robert Wilhelm, and Werner Lemberg.
- *
- * This file is part of the FreeType project, and may only be used,
- * modified, and distributed under the terms of the FreeType project
- * license, LICENSE.TXT.  By continuing to use, modify, or distribute
- * this file you indicate that you have read the license and
- * understand and accept it fully.
- *
- */
+/***************************************************************************/
+/*                                                                         */
+/*  gxvjust.c                                                              */
+/*                                                                         */
+/*    TrueTypeGX/AAT just table validation (body).                         */
+/*                                                                         */
+/*  Copyright 2005-2018 by                                                 */
+/*  suzuki toshiya, Masatake YAMATO, Red Hat K.K.,                         */
+/*  David Turner, Robert Wilhelm, and Werner Lemberg.                      */
+/*                                                                         */
+/*  This file is part of the FreeType project, and may only be used,       */
+/*  modified, and distributed under the terms of the FreeType project      */
+/*  license, LICENSE.TXT.  By continuing to use, modify, or distribute     */
+/*  this file you indicate that you have read the license and              */
+/*  understand and accept it fully.                                        */
+/*                                                                         */
+/***************************************************************************/
 
-/****************************************************************************
- *
- * gxvalid is derived from both gxlayout module and otvalid module.
- * Development of gxlayout is supported by the Information-technology
- * Promotion Agency(IPA), Japan.
- *
- */
+/***************************************************************************/
+/*                                                                         */
+/* gxvalid is derived from both gxlayout module and otvalid module.        */
+/* Development of gxlayout is supported by the Information-technology      */
+/* Promotion Agency(IPA), Japan.                                           */
+/*                                                                         */
+/***************************************************************************/
 
 
 #include "gxvalid.h"
 #include "gxvcommn.h"
 
-#include <freetype/ftsnames.h>
+#include FT_SFNT_NAMES_H
 
 
-  /**************************************************************************
-   *
-   * The macro FT_COMPONENT is used in trace mode.  It is an implicit
-   * parameter of the FT_TRACE() and FT_ERROR() macros, used to print/log
-   * messages during execution.
-   */
+  /*************************************************************************/
+  /*                                                                       */
+  /* The macro FT_COMPONENT is used in trace mode.  It is an implicit      */
+  /* parameter of the FT_TRACE() and FT_ERROR() macros, used to print/log  */
+  /* messages during execution.                                            */
+  /*                                                                       */
 #undef  FT_COMPONENT
-#define FT_COMPONENT  gxvjust
+#define FT_COMPONENT  trace_gxvjust
 
   /*
    * referred `just' table format specification:
@@ -72,13 +72,11 @@
                           const FT_String*  msg_tag,
                           GXV_Validator     gxvalid )
   {
-    FT_UNUSED( msg_tag );
-
     if ( gid < gxvalid->face->num_glyphs )
       return;
 
     GXV_TRACE(( "just table includes too large %s"
-                " GID=%d > %ld (in maxp)\n",
+                " GID=%d > %d (in maxp)\n",
                 msg_tag, gid, gxvalid->face->num_glyphs ));
     GXV_SET_ERR_IF_PARANOID( FT_INVALID_GLYPH_ID );
   }
@@ -140,7 +138,7 @@
     count = FT_NEXT_ULONG( p );
     for ( i = 0; i < count; i++ )
     {
-      GXV_TRACE(( "validating wdc pair %lu/%lu\n", i + 1, count ));
+      GXV_TRACE(( "validating wdc pair %d/%d\n", i + 1, count ));
       gxv_just_wdp_entry_validate( p, limit, gxvalid );
       p += gxvalid->subtable_length;
     }
@@ -206,8 +204,7 @@
     if ( lowerLimit >= upperLimit )
     {
       GXV_TRACE(( "just table includes invalid range spec:"
-                  " lowerLimit(%ld) > upperLimit(%ld)\n",
-                  lowerLimit, upperLimit ));
+                  " lowerLimit(%d) > upperLimit(%d)\n"     ));
       GXV_SET_ERR_IF_PARANOID( FT_INVALID_DATA );
     }
 
@@ -295,14 +292,14 @@
     gxvalid->subtable_length = (FT_ULong)( p - table );
 
     if ( variantsAxis != 0x64756374L ) /* 'duct' */
-      GXV_TRACE(( "variantsAxis 0x%08lx is non default value",
+      GXV_TRACE(( "variantsAxis 0x%08x is non default value",
                    variantsAxis ));
 
     if ( minimumLimit > noStretchValue )
-      GXV_TRACE(( "type4:minimumLimit 0x%08lx > noStretchValue 0x%08lx\n",
+      GXV_TRACE(( "type4:minimumLimit 0x%08x > noStretchValue 0x%08x\n",
                   minimumLimit, noStretchValue ));
     else if ( noStretchValue > maximumLimit )
-      GXV_TRACE(( "type4:noStretchValue 0x%08lx > maximumLimit 0x%08lx\n",
+      GXV_TRACE(( "type4:noStretchValue 0x%08x > maximumLimit 0x%08x\n",
                   noStretchValue, maximumLimit ));
     else if ( !IS_PARANOID_VALIDATION )
       return;
@@ -390,7 +387,7 @@
 
     GXV_LIMIT_CHECK( 4 );
     actionCount = FT_NEXT_ULONG( p );
-    GXV_TRACE(( "actionCount = %lu\n", actionCount ));
+    GXV_TRACE(( "actionCount = %d\n", actionCount ));
 
     for ( i = 0; i < actionCount; i++ )
     {
@@ -515,14 +512,14 @@
     coverage        = FT_NEXT_USHORT( p );
     subFeatureFlags = FT_NEXT_ULONG( p );
 
-    GXV_TRACE(( "  justClassTable: coverage = 0x%04x ", coverage ));
+    GXV_TRACE(( "  justClassTable: coverage = 0x%04x (%s) ", coverage ));
     if ( ( coverage & 0x4000 ) == 0  )
       GXV_TRACE(( "ascending\n" ));
     else
       GXV_TRACE(( "descending\n" ));
 
     if ( subFeatureFlags )
-      GXV_TRACE(( "  justClassTable: nonzero value (0x%08lx)"
+      GXV_TRACE(( "  justClassTable: nonzero value (0x%08x)"
                   " in unused subFeatureFlags\n", subFeatureFlags ));
 
     gxvalid->statetable.optdata               = NULL;
@@ -685,7 +682,7 @@
 
 
     /* Version 1.0 (always:2000) */
-    GXV_TRACE(( " (version = 0x%08lx)\n", version ));
+    GXV_TRACE(( " (version = 0x%08x)\n", version ));
     if ( version != 0x00010000UL )
       FT_INVALID_FORMAT;
 

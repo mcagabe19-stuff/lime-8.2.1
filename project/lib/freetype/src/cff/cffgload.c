@@ -1,51 +1,44 @@
-/****************************************************************************
- *
- * cffgload.c
- *
- *   OpenType Glyph Loader (body).
- *
- * Copyright (C) 1996-2022 by
- * David Turner, Robert Wilhelm, and Werner Lemberg.
- *
- * This file is part of the FreeType project, and may only be used,
- * modified, and distributed under the terms of the FreeType project
- * license, LICENSE.TXT.  By continuing to use, modify, or distribute
- * this file you indicate that you have read the license and
- * understand and accept it fully.
- *
- */
+/***************************************************************************/
+/*                                                                         */
+/*  cffgload.c                                                             */
+/*                                                                         */
+/*    OpenType Glyph Loader (body).                                        */
+/*                                                                         */
+/*  Copyright 1996-2018 by                                                 */
+/*  David Turner, Robert Wilhelm, and Werner Lemberg.                      */
+/*                                                                         */
+/*  This file is part of the FreeType project, and may only be used,       */
+/*  modified, and distributed under the terms of the FreeType project      */
+/*  license, LICENSE.TXT.  By continuing to use, modify, or distribute     */
+/*  this file you indicate that you have read the license and              */
+/*  understand and accept it fully.                                        */
+/*                                                                         */
+/***************************************************************************/
 
 
-#include <freetype/internal/ftdebug.h>
-#include <freetype/internal/ftstream.h>
-#include <freetype/internal/sfnt.h>
-#include <freetype/internal/ftcalc.h>
-#include <freetype/internal/psaux.h>
-#include <freetype/ftoutln.h>
-#include <freetype/ftdriver.h>
+#include <ft2build.h>
+#include FT_INTERNAL_DEBUG_H
+#include FT_INTERNAL_STREAM_H
+#include FT_INTERNAL_SFNT_H
+#include FT_INTERNAL_CALC_H
+#include FT_INTERNAL_POSTSCRIPT_AUX_H
+#include FT_OUTLINE_H
+#include FT_DRIVER_H
 
 #include "cffload.h"
 #include "cffgload.h"
 
 #include "cfferrs.h"
 
-#ifdef TT_CONFIG_OPTION_GX_VAR_SUPPORT
-#define IS_DEFAULT_INSTANCE( _face )             \
-          ( !( FT_IS_NAMED_INSTANCE( _face ) ||  \
-               FT_IS_VARIATION( _face )      ) )
-#else
-#define IS_DEFAULT_INSTANCE( _face )  1
-#endif
 
-
-  /**************************************************************************
-   *
-   * The macro FT_COMPONENT is used in trace mode.  It is an implicit
-   * parameter of the FT_TRACE() and FT_ERROR() macros, used to print/log
-   * messages during execution.
-   */
+  /*************************************************************************/
+  /*                                                                       */
+  /* The macro FT_COMPONENT is used in trace mode.  It is an implicit      */
+  /* parameter of the FT_TRACE() and FT_ERROR() macros, used to print/log  */
+  /* messages during execution.                                            */
+  /*                                                                       */
 #undef  FT_COMPONENT
-#define FT_COMPONENT  cffgload
+#define FT_COMPONENT  trace_cffgload
 
 
   FT_LOCAL_DEF( FT_Error )
@@ -67,7 +60,7 @@
 
 
       *pointer = (FT_Byte*)data.pointer;
-      *length  = data.length;
+      *length  = (FT_ULong)data.length;
 
       return error;
     }
@@ -75,7 +68,7 @@
 #endif /* FT_CONFIG_OPTION_INCREMENTAL */
 
     {
-      CFF_Font  cff = (CFF_Font)( face->extra.data );
+      CFF_Font  cff = (CFF_Font)(face->extra.data);
 
 
       return cff_index_access_element( &cff->charstrings_index, glyph_index,
@@ -102,7 +95,7 @@
 
 
       data.pointer = *pointer;
-      data.length  = (FT_UInt)length;
+      data.length  = (FT_Int)length;
 
       face->root.internal->incremental_interface->funcs->free_glyph_data(
         face->root.internal->incremental_interface->object, &data );
@@ -111,7 +104,7 @@
 #endif /* FT_CONFIG_OPTION_INCREMENTAL */
 
     {
-      CFF_Font  cff = (CFF_Font)( face->extra.data );
+      CFF_Font  cff = (CFF_Font)(face->extra.data);
 
 
       cff_index_forget_element( &cff->charstrings_index, pointer );
@@ -214,8 +207,8 @@
     PSAux_Service            psaux         = (PSAux_Service)face->psaux;
     const CFF_Decoder_Funcs  decoder_funcs = psaux->cff_decoder_funcs;
 
-    FT_Matrix  font_matrix;
-    FT_Vector  font_offset;
+    FT_Matrix    font_matrix;
+    FT_Vector    font_offset;
 
 
     force_scaling = FALSE;
@@ -263,8 +256,8 @@
 
 
       if ( size->strike_index != 0xFFFFFFFFUL      &&
-           ( load_flags & FT_LOAD_NO_BITMAP ) == 0 &&
-           IS_DEFAULT_INSTANCE( size->root.face )  )
+           sfnt->load_eblc                         &&
+           ( load_flags & FT_LOAD_NO_BITMAP ) == 0 )
       {
         TT_SBit_MetricsRec  metrics;
 
@@ -287,16 +280,16 @@
           glyph->root.outline.n_points   = 0;
           glyph->root.outline.n_contours = 0;
 
-          glyph->root.metrics.width  = (FT_Pos)metrics.width  * 64;
-          glyph->root.metrics.height = (FT_Pos)metrics.height * 64;
+          glyph->root.metrics.width  = (FT_Pos)metrics.width  << 6;
+          glyph->root.metrics.height = (FT_Pos)metrics.height << 6;
 
-          glyph->root.metrics.horiBearingX = (FT_Pos)metrics.horiBearingX * 64;
-          glyph->root.metrics.horiBearingY = (FT_Pos)metrics.horiBearingY * 64;
-          glyph->root.metrics.horiAdvance  = (FT_Pos)metrics.horiAdvance  * 64;
+          glyph->root.metrics.horiBearingX = (FT_Pos)metrics.horiBearingX << 6;
+          glyph->root.metrics.horiBearingY = (FT_Pos)metrics.horiBearingY << 6;
+          glyph->root.metrics.horiAdvance  = (FT_Pos)metrics.horiAdvance  << 6;
 
-          glyph->root.metrics.vertBearingX = (FT_Pos)metrics.vertBearingX * 64;
-          glyph->root.metrics.vertBearingY = (FT_Pos)metrics.vertBearingY * 64;
-          glyph->root.metrics.vertAdvance  = (FT_Pos)metrics.vertAdvance  * 64;
+          glyph->root.metrics.vertBearingX = (FT_Pos)metrics.vertBearingX << 6;
+          glyph->root.metrics.vertBearingY = (FT_Pos)metrics.vertBearingY << 6;
+          glyph->root.metrics.vertAdvance  = (FT_Pos)metrics.vertAdvance  << 6;
 
           glyph->root.format = FT_GLYPH_FORMAT_BITMAP;
 
@@ -354,76 +347,6 @@
     if ( load_flags & FT_LOAD_SBITS_ONLY )
       return FT_THROW( Invalid_Argument );
 
-#ifdef FT_CONFIG_OPTION_SVG
-    /* check for OT-SVG */
-    if ( ( load_flags & FT_LOAD_COLOR )     &&
-         ( (TT_Face)glyph->root.face )->svg )
-    {
-      /*
-       * We load the SVG document and try to grab the advances from the
-       * table.  For the bearings we rely on the presetting hook to do that.
-       */
-
-      FT_Short      dummy;
-      FT_UShort     advanceX;
-      FT_UShort     advanceY;
-      SFNT_Service  sfnt;
-
-
-      if ( size && (size->root.metrics.x_ppem < 1 ||
-                    size->root.metrics.y_ppem < 1 ) )
-      {
-        error = FT_THROW( Invalid_Size_Handle );
-        return error;
-      }
-
-      FT_TRACE3(( "Trying to load SVG glyph\n" ));
-
-      sfnt  = (SFNT_Service)((TT_Face)glyph->root.face)->sfnt;
-      error = sfnt->load_svg_doc( (FT_GlyphSlot)glyph, glyph_index );
-      if ( !error )
-      {
-        FT_TRACE3(( "Successfully loaded SVG glyph\n" ));
-
-        glyph->root.format = FT_GLYPH_FORMAT_SVG;
-
-        /*
-         * If horizontal or vertical advances are not present in the table,
-         * this is a problem with the font since the standard requires them.
-         * However, we are graceful and calculate the values by ourselves
-         * for the vertical case.
-         */
-        sfnt->get_metrics( face,
-                           FALSE,
-                           glyph_index,
-                           &dummy,
-                           &advanceX );
-        sfnt->get_metrics( face,
-                           TRUE,
-                           glyph_index,
-                           &dummy,
-                           &advanceY );
-
-        advanceX =
-          (FT_UShort)FT_MulDiv( advanceX,
-                                glyph->root.face->size->metrics.x_ppem,
-                                glyph->root.face->units_per_EM );
-        advanceY =
-          (FT_UShort)FT_MulDiv( advanceY,
-                                glyph->root.face->size->metrics.y_ppem,
-                                glyph->root.face->units_per_EM );
-
-        glyph->root.metrics.horiAdvance = advanceX << 6;
-        glyph->root.metrics.vertAdvance = advanceY << 6;
-
-        return error;
-      }
-
-      FT_TRACE3(( "Failed to load SVG glyph\n" ));
-    }
-
-#endif /* FT_CONFIG_OPTION_SVG */
-
     /* if we have a CID subfont, use its matrix (which has already */
     /* been multiplied with the root matrix)                       */
 
@@ -440,6 +363,7 @@
 
       top_upm = (FT_Long)cff->top_font.font_dict.units_per_em;
       sub_upm = (FT_Long)cff->subfonts[fd_index]->font_dict.units_per_em;
+
 
       font_matrix = cff->subfonts[fd_index]->font_dict.font_matrix;
       font_offset = cff->subfonts[fd_index]->font_dict.font_offset;
@@ -475,6 +399,7 @@
       PS_Driver  driver = (PS_Driver)FT_FACE_DRIVER( face );
 #endif
 
+
       FT_Byte*  charstring;
       FT_ULong  charstring_len;
 
@@ -489,7 +414,7 @@
         decoder.width_only = TRUE;
 
       decoder.builder.no_recurse =
-        FT_BOOL( load_flags & FT_LOAD_NO_RECURSE );
+        (FT_Bool)( load_flags & FT_LOAD_NO_RECURSE );
 
       /* now load the unscaled outline */
       error = cff_get_glyph_data( face, glyph_index,
@@ -740,12 +665,8 @@
         metrics->horiBearingY = cbox.yMax;
 
         if ( has_vertical_info )
-        {
           metrics->vertBearingX = metrics->horiBearingX -
                                     metrics->horiAdvance / 2;
-          metrics->vertBearingY = FT_MulFix( metrics->vertBearingY,
-                                             glyph->y_scale );
-        }
         else
         {
           if ( load_flags & FT_LOAD_VERTICAL_LAYOUT )

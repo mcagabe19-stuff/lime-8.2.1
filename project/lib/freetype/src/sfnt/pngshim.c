@@ -1,25 +1,26 @@
-/****************************************************************************
- *
- * pngshim.c
- *
- *   PNG Bitmap glyph support.
- *
- * Copyright (C) 2013-2022 by
- * Google, Inc.
- * Written by Stuart Gill and Behdad Esfahbod.
- *
- * This file is part of the FreeType project, and may only be used,
- * modified, and distributed under the terms of the FreeType project
- * license, LICENSE.TXT.  By continuing to use, modify, or distribute
- * this file you indicate that you have read the license and
- * understand and accept it fully.
- *
- */
+/***************************************************************************/
+/*                                                                         */
+/*  pngshim.c                                                              */
+/*                                                                         */
+/*    PNG Bitmap glyph support.                                            */
+/*                                                                         */
+/*  Copyright 2013-2018 by                                                 */
+/*  Google, Inc.                                                           */
+/*  Written by Stuart Gill and Behdad Esfahbod.                            */
+/*                                                                         */
+/*  This file is part of the FreeType project, and may only be used,       */
+/*  modified, and distributed under the terms of the FreeType project      */
+/*  license, LICENSE.TXT.  By continuing to use, modify, or distribute     */
+/*  this file you indicate that you have read the license and              */
+/*  understand and accept it fully.                                        */
+/*                                                                         */
+/***************************************************************************/
 
 
-#include <freetype/internal/ftdebug.h>
-#include <freetype/internal/ftstream.h>
-#include <freetype/tttags.h>
+#include <ft2build.h>
+#include FT_INTERNAL_DEBUG_H
+#include FT_INTERNAL_STREAM_H
+#include FT_TRUETYPE_TAGS_H
 #include FT_CONFIG_STANDARD_LIBRARY_H
 
 
@@ -60,19 +61,13 @@
     /* predates clang; the `__BYTE_ORDER__' preprocessor symbol was */
     /* introduced in gcc 4.6 and clang 3.2, respectively.           */
     /* `__builtin_shuffle' for gcc was introduced in gcc 4.7.0.     */
-    /*                                                              */
-    /* Intel compilers do not currently support __builtin_shuffle;  */
-
-    /* The Intel check must be first. */
-#if !defined( __INTEL_COMPILER )                                       && \
-    ( ( defined( __GNUC__ )                                &&             \
+#if ( ( defined( __GNUC__ )                                &&             \
         ( ( __GNUC__ >= 5 )                              ||               \
         ( ( __GNUC__ == 4 ) && ( __GNUC_MINOR__ >= 7 ) ) ) )         ||   \
       ( defined( __clang__ )                                       &&     \
         ( ( __clang_major__ >= 4 )                               ||       \
         ( ( __clang_major__ == 3 ) && ( __clang_minor__ >= 2 ) ) ) ) ) && \
     defined( __OPTIMIZE__ )                                            && \
-    defined( __SSE__ )                                                 && \
     __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 
 #ifdef __clang__
@@ -270,10 +265,7 @@
 
     int         bitdepth, color_type, interlace;
     FT_Int      i;
-
-    /* `rows` gets modified within a 'setjmp' scope; */
-    /* we thus need the `volatile` keyword.          */
-    png_byte* *volatile  rows = NULL;
+    png_byte*  *rows = NULL; /* pacify compiler */
 
 
     if ( x_offset < 0 ||
@@ -335,13 +327,6 @@
 
     if ( populate_map_and_metrics )
     {
-      /* reject too large bitmaps similarly to the rasterizer */
-      if ( imgHeight > 0x7FFF || imgWidth > 0x7FFF )
-      {
-        error = FT_THROW( Array_Too_Large );
-        goto DestroyExit;
-      }
-
       metrics->width  = (FT_UShort)imgWidth;
       metrics->height = (FT_UShort)imgHeight;
 
@@ -350,6 +335,13 @@
       map->pixel_mode = FT_PIXEL_MODE_BGRA;
       map->pitch      = (int)( map->width * 4 );
       map->num_grays  = 256;
+
+      /* reject too large bitmaps similarly to the rasterizer */
+      if ( map->rows > 0x7FFF || map->width > 0x7FFF )
+      {
+        error = FT_THROW( Array_Too_Large );
+        goto DestroyExit;
+      }
     }
 
     /* convert palette/gray image to rgb */
@@ -367,7 +359,7 @@
     }
 
     /* transform transparency to alpha */
-    if ( png_get_valid( png, info, PNG_INFO_tRNS ) )
+    if ( png_get_valid(png, info, PNG_INFO_tRNS ) )
       png_set_tRNS_to_alpha( png );
 
     if ( bitdepth == 16 )
@@ -387,7 +379,7 @@
     png_set_filler( png, 0xFF, PNG_FILLER_AFTER );
 
     /* recheck header after setting EXPAND options */
-    png_read_update_info( png, info );
+    png_read_update_info(png, info );
     png_get_IHDR( png, info,
                   &imgWidth, &imgHeight,
                   &bitdepth, &color_type, &interlace,
@@ -430,7 +422,7 @@
         goto DestroyExit;
     }
 
-    if ( FT_QNEW_ARRAY( rows, imgHeight ) )
+    if ( FT_NEW_ARRAY( rows, imgHeight ) )
     {
       error = FT_THROW( Out_Of_Memory );
       goto DestroyExit;
@@ -441,11 +433,11 @@
 
     png_read_image( png, rows );
 
+    FT_FREE( rows );
+
     png_read_end( png, info );
 
   DestroyExit:
-    /* even if reading fails with longjmp, rows must be freed */
-    FT_FREE( rows );
     png_destroy_read_struct( &png, &info, NULL );
     FT_Stream_Close( &stream );
 
