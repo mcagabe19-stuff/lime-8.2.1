@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2022 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2024 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -20,7 +20,7 @@
 */
 #include "../../SDL_internal.h"
 
-#if SDL_VIDEO_DRIVER_UIKIT
+#ifdef SDL_VIDEO_DRIVER_UIKIT
 
 #include "SDL.h"
 #include "SDL_uikitvideo.h"
@@ -30,20 +30,17 @@
 
 static SDL_bool s_showingMessageBox = SDL_FALSE;
 
-SDL_bool
-UIKit_ShowingMessageBox(void)
+SDL_bool UIKit_ShowingMessageBox(void)
 {
     return s_showingMessageBox;
 }
 
-static void
-UIKit_WaitUntilMessageBoxClosed(const SDL_MessageBoxData *messageboxdata, int *clickedindex)
+static void UIKit_WaitUntilMessageBoxClosed(const SDL_MessageBoxData *messageboxdata, int *clickedindex)
 {
     *clickedindex = messageboxdata->numbuttons;
 
     @autoreleasepool {
         /* Run the main event loop until the alert has finished */
-        /* Note that this needs to be done on the main thread */
         s_showingMessageBox = SDL_TRUE;
         while ((*clickedindex) == messageboxdata->numbuttons) {
             [[NSRunLoop currentRunLoop] runMode:NSDefaultRunLoopMode beforeDate:[NSDate distantFuture]];
@@ -52,8 +49,7 @@ UIKit_WaitUntilMessageBoxClosed(const SDL_MessageBoxData *messageboxdata, int *c
     }
 }
 
-static BOOL
-UIKit_ShowMessageBoxAlertController(const SDL_MessageBoxData *messageboxdata, int *buttonid)
+static BOOL UIKit_ShowMessageBoxAlertController(const SDL_MessageBoxData *messageboxdata, int *buttonid)
 {
     int i;
     int __block clickedindex = messageboxdata->numbuttons;
@@ -84,10 +80,18 @@ UIKit_ShowMessageBoxAlertController(const SDL_MessageBoxData *messageboxdata, in
             style = UIAlertActionStyleCancel;
         }
 
+        /* Track button clicks explicitly to handle potential beta delay issues */
         action = [UIAlertAction actionWithTitle:@(sdlButton->text)
                                 style:style
                                 handler:^(UIAlertAction *alertAction) {
                                     clickedindex = (int)(sdlButton - messageboxdata->buttons);
+                                    /* Delay to ensure iOS processes the click event before we close */
+                                    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                                        if (alertwindow) {
+                                            [window.rootViewController dismissViewControllerAnimated:YES completion:nil];
+                                            alertwindow.hidden = YES;
+                                        }
+                                    });
                                 }];
         [alert addAction:action];
 
@@ -111,110 +115,44 @@ UIKit_ShowMessageBoxAlertController(const SDL_MessageBoxData *messageboxdata, in
         [alertwindow makeKeyAndVisible];
     }
 
+    /* Present alert and wait until the alert controller is dismissed */
     [window.rootViewController presentViewController:alert animated:YES completion:nil];
     UIKit_WaitUntilMessageBoxClosed(messageboxdata, &clickedindex);
 
-    if (alertwindow) {
-        alertwindow.hidden = YES;
+    /* Ensure clickedindex is valid before setting buttonid */
+    if (clickedindex >= 0 && clickedindex < messageboxdata->numbuttons) {
+        *buttonid = messageboxdata->buttons[clickedindex].buttonid;
+    } else {
+        *buttonid = -1; // Indicates no valid button was pressed
     }
 
     UIKit_ForceUpdateHomeIndicator();
 
-    *buttonid = messageboxdata->buttons[clickedindex].buttonid;
     return YES;
 }
 
-/* UIAlertView is deprecated in iOS 8+ in favor of UIAlertController. */
-#if __IPHONE_OS_VERSION_MIN_REQUIRED < 80000
-@interface SDLAlertViewDelegate : NSObject <UIAlertViewDelegate>
-
-@property (nonatomic, assign) int *clickedIndex;
-
-@end
-
-@implementation SDLAlertViewDelegate
-
-- (void)alertView:(UIAlertView *)alertView didDismissWithButtonIndex:(NSInteger)buttonIndex
+static void UIKit_ShowMessageBoxImpl(const SDL_MessageBoxData *messageboxdata, int *buttonid, int *returnValue)
+{ @autoreleasepool
 {
-    if (_clickedIndex != NULL) {
-        *_clickedIndex = (int) buttonIndex;
-    }
-}
-
-@end
-#endif /* __IPHONE_OS_VERSION_MIN_REQUIRED < 80000 */
-
-static BOOL
-UIKit_ShowMessageBoxAlertView(const SDL_MessageBoxData *messageboxdata, int *buttonid)
-{
-    /* UIAlertView is deprecated in iOS 8+ in favor of UIAlertController. */
-#if __IPHONE_OS_VERSION_MIN_REQUIRED < 80000
-    int i;
-    int clickedindex = messageboxdata->numbuttons;
-    UIAlertView *alert = [[UIAlertView alloc] init];
-    SDLAlertViewDelegate *delegate = [[SDLAlertViewDelegate alloc] init];
-
-    alert.delegate = delegate;
-    alert.title = @(messageboxdata->title);
-    alert.message = @(messageboxdata->message);
-
-    for (i = 0; i < messageboxdata->numbuttons; i++) {
-        const SDL_MessageBoxButtonData *sdlButton;
-        if (messageboxdata->flags & SDL_MESSAGEBOX_BUTTONS_RIGHT_TO_LEFT) {
-            sdlButton = &messageboxdata->buttons[messageboxdata->numbuttons - 1 - i];
-        } else {
-            sdlButton = &messageboxdata->buttons[i];
-        }
-        [alert addButtonWithTitle:@(sdlButton->text)];
-    }
-
-    delegate.clickedIndex = &clickedindex;
-
-    [alert show];
-
-    UIKit_WaitUntilMessageBoxClosed(messageboxdata, &clickedindex);
-
-    alert.delegate = nil;
-
-    if (messageboxdata->flags & SDL_MESSAGEBOX_BUTTONS_RIGHT_TO_LEFT) {
-        clickedindex = messageboxdata->numbuttons - 1 - clickedindex;
-    }
-    *buttonid = messageboxdata->buttons[clickedindex].buttonid;
-    return YES;
-#else
-    return NO;
-#endif /* __IPHONE_OS_VERSION_MIN_REQUIRED < 80000 */
-}
-
-static void
-UIKit_ShowMessageBoxImpl(const SDL_MessageBoxData *messageboxdata, int *buttonid, int *returnValue)
-{
-    BOOL success = NO;
-
-    @autoreleasepool {
-        success = UIKit_ShowMessageBoxAlertController(messageboxdata, buttonid);
-        if (!success) {
-            success = UIKit_ShowMessageBoxAlertView(messageboxdata, buttonid);
-        }
-    }
-
-    if (!success) {
-        *returnValue = SDL_SetError("Could not show message box.");
-    } else {
+    if (UIKit_ShowMessageBoxAlertController(messageboxdata, buttonid)) {
         *returnValue = 0;
+    } else {
+        *returnValue = SDL_SetError("Could not show message box.");
     }
-}
+}}
 
-int
-UIKit_ShowMessageBox(const SDL_MessageBoxData *messageboxdata, int *buttonid)
+int UIKit_ShowMessageBox(const SDL_MessageBoxData *messageboxdata, int *buttonid)
 { @autoreleasepool
 {
     __block int returnValue = 0;
 
+    /* Ensure that UIKit_ShowMessageBoxImpl is called on the main thread */
     if ([NSThread isMainThread]) {
         UIKit_ShowMessageBoxImpl(messageboxdata, buttonid, &returnValue);
     } else {
-        dispatch_sync(dispatch_get_main_queue(), ^{ UIKit_ShowMessageBoxImpl(messageboxdata, buttonid, &returnValue); });
+        dispatch_sync(dispatch_get_main_queue(), ^{
+            UIKit_ShowMessageBoxImpl(messageboxdata, buttonid, &returnValue);
+        });
     }
     return returnValue;
 }}
