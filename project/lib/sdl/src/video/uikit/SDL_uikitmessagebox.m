@@ -112,71 +112,57 @@ SDL_bool UIKit_ShowingMessageBox(void)
 
 @end
 
-static void UIKit_WaitUntilMessageBoxClosed(const SDL_MessageBoxData *messageboxdata, int *clickedindex)
+/* Helper function to show the custom alert on a separate thread */
+static void ShowAlertInSeparateThread(const SDL_MessageBoxData *messageboxdata, int *clickedindex)
 {
+    s_showingMessageBox = SDL_TRUE;
     *clickedindex = messageboxdata->numbuttons;
 
-    @autoreleasepool {
-        /* Run the main event loop with a slight delay to prevent freezing */
-        s_showingMessageBox = SDL_TRUE;
-        while ((*clickedindex) == messageboxdata->numbuttons) {
-            [[NSRunLoop currentRunLoop] runMode:NSDefaultRunLoopMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
-            usleep(10000);  // Sleep for 10 milliseconds to keep the UI responsive
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
+        @autoreleasepool {
+            NSMutableArray<NSString *> *buttonTitles = [NSMutableArray array];
+            for (int i = 0; i < messageboxdata->numbuttons; i++) {
+                [buttonTitles addObject:@(messageboxdata->buttons[i].text)];
+            }
+
+            dispatch_sync(dispatch_get_main_queue(), ^{
+                CustomAlertViewController *alertVC = [[CustomAlertViewController alloc] initWithTitle:@(messageboxdata->title)
+                                                                                              message:@(messageboxdata->message)
+                                                                                              buttons:buttonTitles
+                                                                                       buttonHandler:^(NSInteger index) {
+                    *clickedindex = index;
+                    s_showingMessageBox = SDL_FALSE;
+                }];
+                
+                UIWindow *alertWindow = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
+                alertWindow.rootViewController = [UIViewController new];
+                alertWindow.windowLevel = UIWindowLevelAlert + 1;
+                [alertWindow makeKeyAndVisible];
+                
+                // Force layout update before presenting
+                [alertVC.view setNeedsLayout];
+                [alertVC.view layoutIfNeeded];
+                
+                [alertWindow.rootViewController presentViewController:alertVC animated:YES completion:nil];
+                
+                // Poll all common run loop modes to prevent freezing
+                while (s_showingMessageBox) {
+                    [[NSRunLoop currentRunLoop] runMode:NSRunLoopCommonModes beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
+                }
+                
+                alertWindow.hidden = YES;  // Hide the window after use
+            });
         }
-        s_showingMessageBox = SDL_FALSE;
-    }
-}
-
-static BOOL UIKit_ShowCustomAlert(const SDL_MessageBoxData *messageboxdata, int *buttonid)
-{
-    UIWindow *window = nil;
-    UIWindow *alertwindow = nil;
-
-    if (messageboxdata->window) {
-        SDL_WindowData *data = (__bridge SDL_WindowData *) messageboxdata->window->driverdata;
-        window = data.uiwindow;
-    }
-
-    if (window == nil || window.rootViewController == nil) {
-        alertwindow = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
-        alertwindow.rootViewController = [UIViewController new];
-        alertwindow.windowLevel = UIWindowLevelAlert;
-
-        window = alertwindow;
-        [alertwindow makeKeyAndVisible];
-    }
-
-    NSMutableArray<NSString *> *buttonTitles = [NSMutableArray array];
-    for (int i = 0; i < messageboxdata->numbuttons; i++) {
-        [buttonTitles addObject:@(messageboxdata->buttons[i].text)];
-    }
-
-    CustomAlertViewController *alertVC = [[CustomAlertViewController alloc] initWithTitle:@(messageboxdata->title)
-                                                                                  message:@(messageboxdata->message)
-                                                                                  buttons:buttonTitles
-                                                                           buttonHandler:^(NSInteger index) {
-        *buttonid = messageboxdata->buttons[index].buttonid;
-    }];
-
-    [window.rootViewController presentViewController:alertVC animated:YES completion:nil];
-    UIKit_WaitUntilMessageBoxClosed(messageboxdata, buttonid);
-
-    if (alertwindow) {
-        alertwindow.hidden = YES;
-    }
-
-    return YES;
+    });
 }
 
 static void UIKit_ShowMessageBoxImpl(const SDL_MessageBoxData *messageboxdata, int *buttonid, int *returnValue)
-{ @autoreleasepool
 {
-    if (UIKit_ShowCustomAlert(messageboxdata, buttonid)) {
-        *returnValue = 0;
-    } else {
-        *returnValue = SDL_SetError("Could not show message box.");
-    }
-}}
+    int clickedindex = messageboxdata->numbuttons;
+    ShowAlertInSeparateThread(messageboxdata, &clickedindex);
+    *buttonid = messageboxdata->buttons[clickedindex].buttonid;
+    *returnValue = 0;
+}
 
 int UIKit_ShowMessageBox(const SDL_MessageBoxData *messageboxdata, int *buttonid)
 { @autoreleasepool
