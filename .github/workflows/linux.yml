@@ -106,7 +106,7 @@ jobs:
         with:
           name: LinuxArm-NDLL
           path: |
-            ndll/Linux/
+            ndll/LinuxArm/
             !**/.gitignore
       - name: Upload Artifact (arm64)
         uses: actions/upload-artifact@v3
