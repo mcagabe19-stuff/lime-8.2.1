@@ -13,6 +13,9 @@
 
 
 #define ALIGNED_ALLOC_AVAILABLE (__STDC_VERSION__ >= 201112L || __cplusplus >= 201703L)
+#if defined(__ANDROID__) && ANDROID_API < 28
+#define ALIGNED_ALLOC_AVAILABLE false
+#endif
 
 void *al_malloc(size_t alignment, size_t size)
 {
