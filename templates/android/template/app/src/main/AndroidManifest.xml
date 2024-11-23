@@ -39,7 +39,7 @@
 
 		<provider
         	android:name="androidx.core.content.FileProvider"
-        	android:authorities="::meta.packageName::.fileprovider"
+        	android:authorities="::APP_PACKAGE::.fileprovider"
         	android:exported="false"
         	android:grantUriPermissions="true"
 			tools:replace="android:authorities">

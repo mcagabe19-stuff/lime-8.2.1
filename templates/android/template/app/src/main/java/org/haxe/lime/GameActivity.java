@@ -5,7 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.res.AssetManager;
 import androidx.core.content.FileProvider;
-import ::meta.packageName::.BuildConfig;
+import ::APP_PACKAGE::.BuildConfig;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
