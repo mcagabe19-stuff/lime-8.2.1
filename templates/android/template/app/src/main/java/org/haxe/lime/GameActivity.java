@@ -4,6 +4,8 @@ package org.haxe.lime;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.AssetManager;
+import androidx.core.content.FileProvider;
+import ::meta.packageName::.BuildConfig;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -328,35 +330,36 @@ public class GameActivity extends SDLActivity {
 	::end::
 
 
-	public static void openFile (String path) {
+	public static void openFile(String path) {
+    	try {
+        	String extension = path;
+        	int index = path.lastIndexOf('.');
 
-		try {
+        	if (index > 0) {
+         	   extension = path.substring(index + 1);
+        	}
 
-			String extension = path;
-			int index = path.lastIndexOf ('.');
+        	String mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension);
+        	File file = new File(path);
 
-			if (index > 0) {
-
-				extension = path.substring (index + 1);
-
+			Uri uri;
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) { // Android 7.0+
+    			uri = FileProvider.getUriForFile(Extension.mainActivity, BuildConfig.APPLICATION_ID + ".fileprovider", file);
+			} else { // Android 5.0 - 6.0
+    			uri = Uri.fromFile(file);
 			}
 
-			String mimeType = MimeTypeMap.getSingleton ().getMimeTypeFromExtension (extension);
-			File file = new File (path);
+        	Intent intent = new Intent();
+        	intent.setAction(Intent.ACTION_VIEW);
+        	intent.setDataAndType(uri, mimeType);
+			intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        	//intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
-			Intent intent = new Intent ();
-			intent.setAction (Intent.ACTION_VIEW);
-			intent.setDataAndType (Uri.fromFile (file), mimeType);
+        	Extension.mainActivity.startActivity(intent);
 
-			Extension.mainActivity.startActivity (intent);
-
-		} catch (Exception e) {
-
-			Log.e ("GameActivity", e.toString ());
-			return;
-
-		}
-
+    	} catch (Exception e) {
+			Log.e("GameActivity", e.toString());
+    	}
 	}
 
 

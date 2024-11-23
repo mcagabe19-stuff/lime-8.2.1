@@ -75,6 +75,10 @@ android {
 		}
 	}
 
+	buildFeatures {
+        buildConfig = true
+    }
+
 	android.applicationVariants.all { variant ->
 		variant.outputs.all { output ->
 			if (outputFileName != null && outputFileName.endsWith('.apk')) {
@@ -85,6 +89,7 @@ android {
 }
 
 dependencies {
+	implementation 'androidx.core:core:1.6.0'
 	implementation fileTree(dir: 'libs', include: ['*.jar'])
 	::if (ANDROID_LIBRARY_PROJECTS)::::foreach (ANDROID_LIBRARY_PROJECTS)::implementation project(':deps:::name::')
 	::end::::end::
