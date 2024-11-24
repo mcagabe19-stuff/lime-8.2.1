@@ -393,8 +393,8 @@ class FileDialog #if android implements JNISafety #end
 			type = "image/webp";
 		}
 		var bytes:Bytes = data;
-		var path:String = Path.directory(defaultPath);
-		var defaultName:String = Path.withoutDirectory(defaultPath);
+		var path:String = defaultPath == null ? null : Path.directory(defaultPath);
+		var defaultName:String = defaultPath == null ? null : Path.withoutDirectory(defaultPath);
 		JNI.callMember(JNI.createMemberMethod('org/haxe/lime/FileDialog', 'save', '([BLjava/lang/String;Ljava/lang/String;Ljava/lang/String;)V'), JNI_FILE_DIALOG, [bytes.getData(), type, path, defaultName]);
 		return true;
 		#else
