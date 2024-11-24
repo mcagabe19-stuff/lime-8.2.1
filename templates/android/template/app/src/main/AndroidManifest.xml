@@ -37,6 +37,7 @@
 
 		</activity>
 
+		::if (ANDROID_USE_ANDROIDX)::
 		<provider
         	android:name="androidx.core.content.FileProvider"
         	android:authorities="::APP_PACKAGE::.fileprovider"
@@ -45,6 +46,7 @@
 			tools:replace="android:authorities">
         	<meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" />
     	</provider>
+		::end::
 
 	</application>
 

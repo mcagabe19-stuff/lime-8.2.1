@@ -4,8 +4,10 @@ package org.haxe.lime;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.AssetManager;
+::if (ANDROID_USE_ANDROIDX)::
 import androidx.core.content.FileProvider;
 import ::APP_PACKAGE::.BuildConfig;
+::end::
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -367,11 +369,15 @@ public class GameActivity extends SDLActivity {
         	File file = new File(path);
 
 			Uri uri;
+			::if (ANDROID_USE_ANDROIDX)::
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) { // Android 7.0+
     			uri = FileProvider.getUriForFile(Extension.mainActivity, BuildConfig.APPLICATION_ID + ".fileprovider", file);
 			} else { // Android 5.0 - 6.0
     			uri = Uri.fromFile(file);
 			}
+			::else::
+			uri = Uri.fromFile(file);
+			::end::
 
         	Intent intent = new Intent();
         	intent.setAction(Intent.ACTION_VIEW);
