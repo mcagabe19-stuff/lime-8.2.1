@@ -3,10 +3,11 @@ package org.haxe.lime;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ContentResolver;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
 import android.os.ParcelFileDescriptor;
 import android.net.Uri;
 import android.util.Log;
-import android.util.ArrayMap;
 import android.widget.Toast;
 import android.provider.DocumentsContract;
 import android.webkit.MimeTypeMap;
@@ -14,10 +15,11 @@ import android.webkit.MimeTypeMap;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.net.URI;
+import java.io.OutputStream;
 
 import org.haxe.extension.Extension;
 import org.haxe.lime.HaxeObject;
+
 import org.haxe.lime.GameActivity;
 
 /*
@@ -50,15 +52,17 @@ public class FileDialog extends Extension
 {
 	public static final String LOG_TAG = "FileDialog";
 	private static final int OPEN_REQUEST_CODE = 990;
+	private static final int SAVE_REQUEST_CODE = 995;
 
-	public HaxeObject hxOBJ;
+	public HaxeObject haxeObject;
+	public FileSaveCallback onFileSave = null;
 	// that's to prevent multiple FileDialogs from dispatching each others
 	// kind it's kinda a shitty to handle it but idk anything better rn
 	public boolean awaitingResults = false;
 
 	public FileDialog(final HaxeObject haxeObject)
 	{
-		hxOBJ = haxeObject;
+		this.haxeObject = haxeObject;
 	}
 
 	public static FileDialog createInstance(final HaxeObject haxeObject)
@@ -106,16 +110,61 @@ public class FileDialog extends Extension
 			intent.putExtra(Intent.EXTRA_TITLE, title);
 		}
 		
-		Log.d(LOG_TAG, "launching file picker intent!");
+		Log.d(LOG_TAG, "launching file picker (ACTION_OPEN_DOCUMENT) intent!");
 		awaitingResults = true;
 		mainActivity.startActivityForResult(intent, OPEN_REQUEST_CODE);
+	}
+
+	public void save(byte[] data, String mime, String defaultPath, String title)
+	{
+		Log.d("SDL", "Current Target SDK: " + getTargetSdkVersion());
+		Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+		intent.addCategory(Intent.CATEGORY_OPENABLE);
+
+		if (defaultPath != null)
+		{
+			Log.d(LOG_TAG, "setting save dialog inital path...");
+			File file = new File(defaultPath);
+			if (file.exists())
+			{
+				Uri uri = Uri.fromFile(file);
+				intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, uri);
+				Log.d(LOG_TAG, "Set to " + uri.getPath() + "!");
+			}
+			else
+			{
+				Log.d(LOG_TAG, "Uh Oh the path doesn't exist :(");
+			}
+		}
+
+		if (title != null)
+		{
+			Log.d(LOG_TAG, "Setting title to " + title);
+			intent.putExtra(Intent.EXTRA_TITLE, title);
+		}
+
+		onFileSave = new FileSaveCallback()
+		{
+        	@Override
+        	public void execute(Uri uri)
+			{
+				Log.d(LOG_TAG, "Saving File to " + uri.toString());
+				writeBytesToFile(uri, data);
+            }
+        };
+		
+		Log.d(LOG_TAG, "launching file saver (ACTION_CREATE_DOCUMENT) intent!");
+		awaitingResults = true;
+		
+		intent.setType(mime);
+		mainActivity.startActivityForResult(intent, SAVE_REQUEST_CODE);
 	}
 
 
 	@Override
 	public boolean onActivityResult(int requestCode, int resultCode, Intent data)
 	{
-		if (hxOBJ != null && awaitingResults)
+		if (haxeObject != null && awaitingResults)
 		{
 			String uri = null;
 			byte[] bytesData = null;
@@ -123,7 +172,7 @@ public class FileDialog extends Extension
 			if (data != null && data.getData() != null)
 				uri = data.getData().toString();
 
-			if (requestCode == OPEN_REQUEST_CODE && resultCode == mainActivity.RESULT_OK)
+			if (resultCode == mainActivity.RESULT_OK)
 			{
 				switch (requestCode)
 				{
@@ -138,12 +187,25 @@ public class FileDialog extends Extension
 							Log.e(LOG_TAG, "Failed to get file bytes\n" + e.getMessage());
 						}
 						break;
+					case SAVE_REQUEST_CODE:
+						if (onFileSave != null)
+						{
+							onFileSave.execute(data.getData());
+							onFileSave = null;
+						}
+						break;
 					default:
 						break;
 				}
 			}
 
-			hxOBJ.call4("jni_activity_results", requestCode, resultCode, uri, bytesData);
+			Object[] args = new Object[5];
+			args[0] = requestCode;
+			args[1] = resultCode;
+			args[2] = uri;
+			args[3] = data.getData().getPath();
+			args[4] = bytesData;
+			haxeObject.call("jni_activity_results", args);
 		}
 
 		awaitingResults = false;
@@ -160,7 +222,7 @@ public class FileDialog extends Extension
 		return extension;
 	}
 
-	public static byte[] getFileBytes(Uri fileUri) throws IOException
+	private static byte[] getFileBytes(Uri fileUri) throws IOException
 	{
 		ContentResolver contentResolver = mainContext.getContentResolver();
     	ParcelFileDescriptor parcelFileDescriptor = null;
@@ -185,9 +247,9 @@ public class FileDialog extends Extension
     	    return fileBytes;
 
     	}
-		catch (IOException ioe)
+		catch (IOException e)
 		{
-			Log.e(LOG_TAG, "Failed to get file bytes\n" + ioe.getMessage());
+			Log.e(LOG_TAG, "Failed to get file bytes\n" + e.getMessage());
 			return new byte[0];
 		}
 		finally
@@ -204,4 +266,31 @@ public class FileDialog extends Extension
     	    }
     	}
 	}
+
+	private static void writeBytesToFile(Uri uri, byte[] data)
+	{
+    	try
+		{
+        	// Open an OutputStream to the URI to write data to the file
+        	OutputStream outputStream = mainContext.getContentResolver().openOutputStream(uri);
+
+	        if (outputStream != null)
+			{
+        	    // Write the byte array to the file
+            	outputStream.write(data);
+				outputStream.close();  // Don't forget to close the stream
+        	    Log.d(LOG_TAG, "File saved successfully.");
+       		}
+    	}
+		catch (IOException e)
+		{
+        	Log.e(LOG_TAG, "Failed to save file: " + e.getMessage());
+    	}
+	}
+}
+
+@FunctionalInterface
+interface FileSaveCallback
+{
+    void execute(Uri uri);
 }
