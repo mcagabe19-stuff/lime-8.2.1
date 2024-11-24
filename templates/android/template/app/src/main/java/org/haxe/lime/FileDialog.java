@@ -142,15 +142,22 @@ public class FileDialog extends Extension
 			intent.putExtra(Intent.EXTRA_TITLE, title);
 		}
 
-		onFileSave = new FileSaveCallback()
+		if  (data != null)
 		{
-        	@Override
-        	public void execute(Uri uri)
+			onFileSave = new FileSaveCallback()
 			{
-				Log.d(LOG_TAG, "Saving File to " + uri.toString());
-				writeBytesToFile(uri, data);
-            }
-        };
+        		@Override
+        		public void execute(Uri uri)
+				{
+					Log.d(LOG_TAG, "Saving File to " + uri.toString());
+					writeBytesToFile(uri, data);
+        	    }
+        	};
+		}
+		else
+		{
+			Log.w(LOG_TAG, "No bytes data were passed to `save`, no bytes will be written to it.");
+		}
 		
 		Log.d(LOG_TAG, "launching file saver (ACTION_CREATE_DOCUMENT) intent!");
 		awaitingResults = true;
@@ -168,11 +175,9 @@ public class FileDialog extends Extension
 			String uri = null;
 			byte[] bytesData = null;
 
-			if (data != null && data.getData() != null)
-				uri = data.getData().toString();
-
-			if (resultCode == mainActivity.RESULT_OK)
+			if (resultCode == mainActivity.RESULT_OK && data != null && data.getData() != null)
 			{
+				uri = data.getData().toString();
 				switch (requestCode)
 				{
 					case OPEN_REQUEST_CODE:
@@ -197,6 +202,10 @@ public class FileDialog extends Extension
 						break;
 				}
 			}
+			else
+			{
+				Log.e(LOG_TAG, "Activity results for request code " + requestCode + " failed with result code " + resultCode + " and data " + data);
+			}
 
 			Object[] args = new Object[5];
 			args[0] = requestCode;
@@ -211,7 +220,8 @@ public class FileDialog extends Extension
 		return true;
 	}
 
-	public static String formatExtension(String extension) {
+	public static String formatExtension(String extension)
+	{
 		if (extension.startsWith("*")) {
 			extension = extension.substring(1);
 		}

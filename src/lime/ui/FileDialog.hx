@@ -226,10 +226,14 @@ class FileDialog #if android implements JNISafety #end
 				open(filter, defaultPath, title);
 
 			case OPEN_MULTIPLE:
+				onCancel.dispatch();
+				return false;
 			case OPEN_DIRECTORY:
+				onCancel.dispatch();
+				return false;
 
 			case SAVE:
-				save('smth very not useful', filter, defaultPath, title, 'application/octet-stream');
+				save(null, filter, defaultPath, title, 'application/octet-stream');
 		}
 		return true;
 		#else
@@ -311,11 +315,13 @@ class FileDialog #if android implements JNISafety #end
 	**/
 	public function save(data:Resource, filter:String = null, defaultPath:String = null, title:String = null, type:String = "application/octet-stream"):Bool
 	{
+		#if !android
 		if (data == null)
 		{
 			onCancel.dispatch();
 			return false;
 		}
+		#end
 
 		#if (desktop && sys)
 		var worker = new ThreadPool(#if (windows && hl) SINGLE_THREADED #end);
@@ -409,7 +415,7 @@ class FileDialog #if android implements JNISafety #end
 		var path:String = defaultPath == null ? null : Path.directory(defaultPath);
 		var defaultName:String = defaultPath == null ? null : Path.withoutDirectory(defaultPath);
 		JNI.callMember(JNI.createMemberMethod('org/haxe/lime/FileDialog', 'save', '([BLjava/lang/String;Ljava/lang/String;Ljava/lang/String;)V'),
-			JNI_FILE_DIALOG, [bytes.getData(), type, path, defaultName]);
+			JNI_FILE_DIALOG, [bytes == null ? null : bytes.getData(), type, path, defaultName]);
 		return true;
 		#else
 		onCancel.dispatch();
