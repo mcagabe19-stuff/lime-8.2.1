@@ -9,6 +9,9 @@ import lime.system.CFFI;
 import lime.system.ThreadPool;
 import lime.utils.ArrayBuffer;
 import lime.utils.Resource;
+#if android
+import lime.system.JNI;
+#end
 #if hl
 import hl.Bytes as HLBytes;
 import hl.NativeArray;
@@ -48,7 +51,7 @@ import js.html.Blob;
 #end
 @:access(lime._internal.backend.native.NativeCFFI)
 @:access(lime.graphics.Image)
-class FileDialog
+class FileDialog #if android implements JNISafety #end
 {
 	/**
 		Triggers when the user clicks "Cancel" during any operation, or when a function is unsupported
@@ -79,7 +82,18 @@ class FileDialog
 	**/
 	public var onSelectMultiple = new Event<Array<String>->Void>();
 
-	public function new() {}
+	#if android
+	private static final OPEN_REQUEST_CODE:Int = JNI.createStaticField('org/haxe/lime/FileDialog', 'OPEN_REQUEST_CODE', 'I').get();
+	private static final RESULT_OK:Int = -1;
+	private var JNI_FILE_DIALOG:Dynamic = null;
+	#end
+
+	public function new()
+	{
+		#if android
+		JNI_FILE_DIALOG = JNI.createStaticMethod('org/haxe/lime/FileDialog', 'createInstance', '(Lorg/haxe/lime/HaxeObject;)Lorg/haxe/lime/FileDialog;')(this);
+		#end
+	}
 
 	/**
 		Opens a file selection dialog. If successful, either `onSelect` or `onSelectMultiple` will trigger
@@ -257,6 +271,9 @@ class FileDialog
 		});
 
 		return true;
+		#elseif android
+		JNI.callMember(JNI.createMemberMethod('org/haxe/lime/FileDialog', 'open', '(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V'), JNI_FILE_DIALOG, [filter, defaultPath, title]);
+		return true;
 		#else
 		onCancel.dispatch();
 		return false;
@@ -362,4 +379,27 @@ class FileDialog
 		return false;
 		#end
 	}
+
+	#if android
+	@:runOnMainThread
+	private function jni_activity_results(requestCode:Int, resultCode:Int, uri:String, data:Dynamic)
+	{
+		if (resultCode == RESULT_OK)
+		{
+			switch (requestCode)
+			{
+				case OPEN_REQUEST_CODE:
+					try
+					{
+						onOpen.dispatch(Bytes.ofData(data));
+					}
+					catch (e:Dynamic) {}
+			}
+		}
+		else
+		{
+			onCancel.dispatch();
+		}
+	}
+	#end
 }

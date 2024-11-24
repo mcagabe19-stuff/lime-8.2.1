@@ -21,6 +21,7 @@ import android.webkit.MimeTypeMap;
 import org.haxe.extension.Extension;
 import android.view.WindowManager;
 import org.libsdl.app.SDLActivity;
+import org.haxe.lime.FileDialog;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -32,6 +33,8 @@ public class GameActivity extends SDLActivity {
 
 	private static AssetManager assetManager;
 	private static List<Extension> extensions;
+	// TODO: Handle the rest of the callbacks for filedialogs?
+	private static List<FileDialog> filedialogs;
 	private static DisplayMetrics metrics;
 	private static Vibrator vibrator;
 
@@ -86,6 +89,12 @@ public class GameActivity extends SDLActivity {
 
 		}
 
+		if (filedialogs != null) {
+			for (FileDialog fileDialog : filedialogs) {
+				fileDialog.onActivityResult (requestCode, resultCode, data);
+			}
+		}
+
 		super.onActivityResult (requestCode, resultCode, data);
 
 	}
@@ -107,6 +116,16 @@ public class GameActivity extends SDLActivity {
 
 	}
 
+	public static FileDialog creatFileDialog(final HaxeObject haxeObject)
+	{
+		FileDialog fileDialog = new FileDialog(haxeObject);
+		if (filedialogs == null)
+		{
+			filedialogs = new ArrayList<FileDialog> ();
+		}
+		filedialogs.add(fileDialog);
+		return fileDialog;
+	}
 
 	protected void onCreate (Bundle state) {
 
@@ -153,6 +172,11 @@ public class GameActivity extends SDLActivity {
 
 		}
 
+		if (filedialogs != null) {
+			for (FileDialog fileDialog : filedialogs) {
+				fileDialog.onCreate (state);
+			}
+		}
 	}
 
 
