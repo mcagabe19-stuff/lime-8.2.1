@@ -117,7 +117,6 @@ public class FileDialog extends Extension
 
 	public void save(byte[] data, String mime, String defaultPath, String title)
 	{
-		Log.d("SDL", "Current Target SDK: " + getTargetSdkVersion());
 		Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
 		intent.addCategory(Intent.CATEGORY_OPENABLE);
 

@@ -219,6 +219,19 @@ class FileDialog #if android implements JNISafety #end
 		});
 
 		return true;
+		#elseif android
+		switch (type)
+		{
+			case OPEN:
+				open(filter, defaultPath, title);
+
+			case OPEN_MULTIPLE:
+			case OPEN_DIRECTORY:
+
+			case SAVE:
+				save('smth very not useful', filter, defaultPath, title, 'application/octet-stream');
+		}
+		return true;
 		#else
 		onCancel.dispatch();
 		return false;
@@ -395,7 +408,8 @@ class FileDialog #if android implements JNISafety #end
 		var bytes:Bytes = data;
 		var path:String = defaultPath == null ? null : Path.directory(defaultPath);
 		var defaultName:String = defaultPath == null ? null : Path.withoutDirectory(defaultPath);
-		JNI.callMember(JNI.createMemberMethod('org/haxe/lime/FileDialog', 'save', '([BLjava/lang/String;Ljava/lang/String;Ljava/lang/String;)V'), JNI_FILE_DIALOG, [bytes.getData(), type, path, defaultName]);
+		JNI.callMember(JNI.createMemberMethod('org/haxe/lime/FileDialog', 'save', '([BLjava/lang/String;Ljava/lang/String;Ljava/lang/String;)V'),
+			JNI_FILE_DIALOG, [bytes.getData(), type, path, defaultName]);
 		return true;
 		#else
 		onCancel.dispatch();
