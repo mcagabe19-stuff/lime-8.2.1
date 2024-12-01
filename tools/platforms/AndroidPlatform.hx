@@ -158,6 +158,8 @@ class AndroidPlatform extends PlatformTarget
 			architectures = [Architecture.X86];
 		else if (project.targetFlags.exists("ONLY_X86_64"))
 			architectures = [Architecture.X64];
+		else if (project.targetFlags.exists("ONLY_ARMV5") || project.targetFlags.exists("ONLY_ARMV6"))
+                        architectures = [Architecture.ARMV5];
 
 		if (architectures.length == 0)
 		{
@@ -402,6 +404,11 @@ class AndroidPlatform extends PlatformTarget
 			x64 = true;
 			armv5 = arm64 = armv7 = x86 = false;
 		}
+		else if (project.targetFlags.exists("ONLY_ARMV5") || project.targetFlags.exists("ONLY_ARMV6"))
+                {
+                        armv5 = true;
+                        arm64 = armv7 = x86 = x64 = false;
+                }
 
 		if (armv5) commands.push(["-Dandroid", "-DPLATFORM=android-21"]);
 		if (armv7) commands.push(["-Dandroid", "-DHXCPP_ARMV7", "-DPLATFORM=android-21"]);
