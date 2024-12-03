@@ -10,6 +10,8 @@
 	<true/>
 	<key>LSSupportsOpeningDocumentsInPlace</key>
 	<string>true</string>
+	<key>LSApplicationCategoryType</key>
+	<string>::CATEGORY_TYPE::</string>
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>To play with controller accept bluetooth permission.</string>
 	<key>CFBundleDevelopmentRegion</key>
