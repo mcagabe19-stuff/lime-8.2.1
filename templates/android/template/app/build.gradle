@@ -70,7 +70,13 @@ android {
 
 	buildTypes {
 		release {
+			::if (ANDROID_MINIFY)::
+			minifyEnabled true
+			shrinkResources true
+			proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+			::else::
 			minifyEnabled false
+			::end::
 			signingConfig signingConfigs.release
 		}
 	}
