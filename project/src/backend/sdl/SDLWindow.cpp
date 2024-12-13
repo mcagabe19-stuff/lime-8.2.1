@@ -76,6 +76,9 @@ namespace lime {
 		SDL_SetHint (SDL_HINT_MOUSE_TOUCH_EVENTS, "0");
 		SDL_SetHint (SDL_HINT_TOUCH_MOUSE_EVENTS, "1");
 		#endif
+		#if defined(TARGET_OS_IOS) && !defined(TARGET_OS_TV)
+		SDL_SetHint (SDL_HINT_IOS_HIDE_HOME_INDICATOR, "2");
+		#endif
 
 		if (flags & WINDOW_FLAG_HARDWARE) {
 
