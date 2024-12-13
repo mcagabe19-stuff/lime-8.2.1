@@ -282,6 +282,11 @@ SDL_LoadLaunchImageNamed(NSString *name, int screenh)
 }
 
 #if !TARGET_OS_TV
+- (UIRectEdge)preferredScreenEdgesDeferringSystemGestures
+{
+    return UIRectEdgeBottom;
+}
+
 - (BOOL)shouldAutorotate
 {
     /* If YES, the launch image will be incorrectly rotated in some cases. */

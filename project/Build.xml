@@ -201,7 +201,6 @@
 
 		<section if="LIME_PNG">
 
-			<compilerflag value="-I${NATIVE_TOOLKIT_PATH}/wuffs/release/c/" />
 			<compilerflag value="-I${NATIVE_TOOLKIT_PATH}/custom/png/" />
 			<compilerflag value="-I${NATIVE_TOOLKIT_PATH}/png/" />
 			<compilerflag value="-I${NATIVE_TOOLKIT_PATH}/zlib/" />
@@ -363,7 +362,6 @@
 	<include name="lib/vorbis-files.xml" />
 	<include name="lib/vpx-files.xml" />
 	<include name="lib/webm-files.xml" />
-	<include name="lib/wuffs-files.xml" />
 	<include name="lib/zlib-files.xml" />
 
 	<set name="DEBUGEXTRA" value="-debug" if="fulldebug" />
@@ -397,7 +395,6 @@
 		<files id="native-toolkit-vorbis" if="LIME_VORBIS" />
 		<files id="native-toolkit-vpx" if="LIME_VPX" />
 		<files id="native-toolkit-webm" if="LIME_WEBM" />
-		<files id="native-toolkit-wuffs" if="LIME_PNG || LIME_JPEG" />
 		<files id="native-toolkit-zlib" if="LIME_ZLIB" />
 
 		<section unless="static_link">
